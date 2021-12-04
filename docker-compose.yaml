@@ -1,0 +1,172 @@
+version: "2.1"
+services:
+  zookeeper:
+    image: zookeeper:3.6.2
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+      - 8080:8080
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOO_PORT_NUMBER: 2181
+    networks:
+      - kafka-cluster-tier
+
+  kafka-1:
+    image: wurstmeister/kafka:2.13-2.6.0
+    container_name: kafka-1
+    hostname: kafka-1
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka-cluster-tier
+    ports:
+      - 9092:9092
+    env_file:
+      - kafka.env
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: INSIDE://:9091,OUTSIDE://:9092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9091,OUTSIDE://kafka-1:9092
+
+  kafka-2:
+    image: wurstmeister/kafka:2.13-2.6.0
+    container_name: kafka-2
+    hostname: kafka-2
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka-cluster-tier
+    ports:
+      - 19092:19092
+    env_file:
+      - kafka.env
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_LISTENERS: INSIDE://:19091,OUTSIDE://:19092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:19091,OUTSIDE://kafka-2:19092
+
+  kafka-3:
+    image: wurstmeister/kafka:2.13-2.6.0
+    container_name: kafka-3
+    hostname: kafka-3
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka-cluster-tier
+    ports:
+      - 29092:29092
+    env_file:
+      - kafka.env
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_LISTENERS: INSIDE://:29091,OUTSIDE://:29092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:29091,OUTSIDE://kafka-3:29092
+
+  kafka-connect-source:
+    image: debezium/connect
+    container_name: kafka-connect-source
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+      - postgres
+    ports:
+      - 8083:8083
+    networks:
+      - kafka-cluster-tier
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://kafka-connect-source:8083/"]
+    environment:
+      REST_PORT: 8083
+      BOOTSTRAP_SERVERS: kafka-1:9092
+      REST_ADVERTISED_HOST_NAME: localhost
+      GROUP_ID: de-kafka-connect-group-1
+      PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+      CONFIG_STORAGE_TOPIC: de-connect-source-config
+      OFFSET_STORAGE_TOPIC: de-connect-source-offset
+      STATUS_STORAGE_TOPIC: de-connect-source-status
+      KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+
+  postgres:
+    image: debezium/postgres:12-alpine
+    container_name: postgres
+    networks:
+      - kafka-cluster-tier
+    ports:
+      - 5444:5432
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+
+  kafka-connect-sink:
+    image: confluentinc/cp-kafka-connect:5.4.3
+    container_name: kafka-connect-sink
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+      - es
+    ports:
+      - 8084:8084
+    networks:
+      - kafka-cluster-tier
+    environment:
+      CONNECT_REST_PORT: 8084
+      CONNECT_BOOTSTRAP_SERVERS: kafka-1:9092
+      CONNECT_REST_ADVERTISED_HOST_NAME: localhost
+      CONNECT_GROUP_ID: de-kafka-connect-group-2
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+      CONNECT_CONFIG_STORAGE_TOPIC: de-connect-sink-config
+      CONNECT_OFFSET_STORAGE_TOPIC: de-connect-sink-offset
+      CONNECT_STATUS_STORAGE_TOPIC: de-connect-sink-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+
+  es:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    ports:
+      - "9200:9200"
+    volumes:
+      - esData:/usr/share/elasticsearch/data
+    networks:
+      - kafka-cluster-tier
+    environment:
+      ES_JAVA_OPTS: "-Xmx512m -Xms32m"
+      "discovery.type": "single-node"
+
+  data_generator:
+    build: ./data_generator
+    container_name: data_generator
+    networks:
+      - kafka-cluster-tier
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  consumer_producer:
+    build: ./python_consumer_producer
+    container_name: python_consumer_producer
+    networks:
+      - kafka-cluster-tier
+    depends_on:
+      kafka-connect-source:
+        condition: service_healthy
+      kafka-connect-sink:
+        condition: service_healthy
+
+networks:
+  kafka-cluster-tier:
+    driver: bridge
+
+volumes:
+  esData: { }
