@@ -1,21 +1,20 @@
 import json
-import faker
+import os
 
 from kafka import KafkaProducer, KafkaConsumer
 
-fake = faker.Faker()
+from data_models.models import PacketModel
 
-consumer = KafkaConsumer('de-source-data',
-                         bootstrap_servers=['kafka-1:9092', 'kafka-2:9092', 'kafka-3:9092'])
-producer = KafkaProducer(bootstrap_servers=['kafka-1:9092', 'kafka-2:9092', 'kafka-3:9092'])
+INTERFACE_TO_SNIFF = os.environ.get("INTERFACE", "en0_topic")
+
+bootstrap_servers = ['127.0.0.1:19092', '127.0.0.1:29092', '127.0.0.1:39092']
+
+consumer = KafkaConsumer(
+    INTERFACE_TO_SNIFF,
+    bootstrap_servers=bootstrap_servers,
+)
+producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
 
 for msg in consumer:
-    json_data = json.loads(msg.value)
-    data = json_data['payload']['after']
-    print(json.dumps(data, indent=4))
-
-    if data['type'] == '3':
-        data['address'] = fake.address()
-        new_msg = bytes(json.dumps(data), encoding='utf-8')
-        partition = int(data['customer_id'])
-        producer.send('de-enriched-data', new_msg, partition=partition)
+    packet = PacketModel.parse_raw(msg.value)
+    print(json.dumps(packet.dict(), indent=4))

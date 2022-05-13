@@ -1,1 +1,0 @@
-curl -XPOST http://kafka-connect-source:8083/connectors -d @postgres_connect.json -H "Content-Type: application/json"
