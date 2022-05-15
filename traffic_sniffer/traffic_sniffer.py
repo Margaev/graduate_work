@@ -15,13 +15,7 @@ INTERFACE_TO_SNIFF = os.environ.get("INTERFACE", "en0")
 KAFKA_TOPIC = f"{INTERFACE_TO_SNIFF}_topic"
 PARTITIONS_NUMBER = os.environ.get("PARTITIONS_NUMBER", 10)
 
-# bootstrap_servers = [
-#     "kafka-0.kafka-headless.default.svc.cluster.local:9092",
-#     "kafka-1.kafka-headless.default.svc.cluster.local:9092",
-#     "kafka-2.kafka-headless.default.svc.cluster.local:9092",
-# ]
 bootstrap_servers = ['127.0.0.1:19092', '127.0.0.1:29092', '127.0.0.1:39092']
-# bootstrap_servers = ['127.0.0.1:19092']
 
 
 def parse_packet(raw_packet: Packet) -> PacketModel:

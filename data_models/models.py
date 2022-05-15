@@ -11,5 +11,5 @@ class PacketModel(BaseModel):
     dst_port: int = None
     timestamp: int = None
     seq: str = None
-    ACK: str = None
+    ack: str = None
     application_protocol: str = None
