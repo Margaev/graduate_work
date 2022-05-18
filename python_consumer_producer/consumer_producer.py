@@ -22,7 +22,7 @@ consumer = KafkaConsumer(
     INTERFACE_TO_SNIFF,
     bootstrap_servers=bootstrap_servers,
 )
-producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
+# producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
 
 
 if __name__ == '__main__':

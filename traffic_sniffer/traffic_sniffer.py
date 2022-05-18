@@ -9,7 +9,7 @@ from kafka import KafkaProducer
 from helpers.packet_parser import NetworkingProtocolParser, TransportProtocolParser, ApplicationProtocolParser
 from data_models.models import PacketModel
 
-logging.basicConfig(level="INFO")
+logging.basicConfig(level="WARNING")
 
 INTERFACE_TO_SNIFF = os.environ.get("INTERFACE", "en0")
 KAFKA_TOPIC = f"{INTERFACE_TO_SNIFF}_topic"
@@ -37,7 +37,7 @@ def parse_packet(raw_packet: Packet) -> PacketModel:
 
 
 def get_partition_by_ips(src_ip: str, dst_ip: str) -> int:
-    hex_hash = hashlib.md5(f"{src_ip}-{dst_ip}".encode("UTF-8")).hexdigest()
+    hex_hash = hashlib.md5(f"{sorted((src_ip, dst_ip))}".encode("UTF-8")).hexdigest()
     return int(hex_hash, 16) % PARTITIONS_NUMBER
 
 
@@ -58,14 +58,18 @@ def send_packet_to_kafka(packet: PacketModel):
     producer = KafkaProducer(
         api_version=(2, 5, 0),
         bootstrap_servers=bootstrap_servers,
+        retries=5,
     )
+
     message = bytes(packet.json(), encoding='utf-8')
     partition = get_partition_by_ips(src_ip=packet.src_ip, dst_ip=packet.dst_ip)
+
     producer.send(
         topic=KAFKA_TOPIC,
         value=message,
         partition=partition,
     ).add_callback(on_send_success).add_errback(on_error_callback)
+
     producer.flush()
     producer.close(2)
 
@@ -81,5 +85,4 @@ if __name__ == '__main__':
         iface=INTERFACE_TO_SNIFF,
         store=False,
         prn=callback,
-        count=1000,
     )

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class PacketModel(BaseModel):
     interface: str
+    flags: str = None
     networking_protocol: str = None
     src_ip: str = None
     dst_ip: str = None

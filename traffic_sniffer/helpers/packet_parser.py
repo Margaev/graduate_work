@@ -17,7 +17,7 @@ class BaseProtocolParser(ABC):
 
     def _get_protocol(self, pkt: Packet) -> Optional[Packet]:
         if len(self.protocols) == 0:
-            logging.info("No protocols were stated in init method...")
+            logging.info("No protocols were stated in cls.protocols property...")
         for protocol in self.protocols:
             if protocol in pkt:
                 return protocol
