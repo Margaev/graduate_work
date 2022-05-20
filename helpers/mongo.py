@@ -9,10 +9,10 @@ logging.basicConfig(level="INFO")
 
 
 class MongoManager:
-    def __init__(self, database: str, collection: str, username: str, password: str):
+    def __init__(self, host: str, port: int, database: str, collection: str, username: str, password: str):
         self._client = MongoClient(
-            host="127.0.0.1",
-            port=27017,
+            host=host,
+            port=port,
             username=username,
             password=password,
         )

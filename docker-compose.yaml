@@ -86,6 +86,8 @@ services:
   mongo:
     image: mongo
     restart: always
+    networks:
+      - kafka-cluster-tier
     ports:
       - "27017:27017"
     environment:
@@ -95,6 +97,8 @@ services:
   mongo-express:
     image: mongo-express
     restart: always
+    networks:
+      - kafka-cluster-tier
     ports:
       - "8081:8081"
     environment:
@@ -104,7 +108,7 @@ services:
     depends_on:
       - mongo
 
-  consumer_producer:
+  consumer_producer:  # TODO rename
     build:
       context: .
       dockerfile: consumer_producer.Dockerfile
@@ -117,6 +121,19 @@ services:
         condition: service_healthy
       kafka-3:
         condition: service_healthy
+    restart: always
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard.Dockerfile
+    container_name: dashboard
+    networks:
+      - kafka-cluster-tier
+    ports:
+      - "8050:8050"
+    depends_on:
+      - mongo
     restart: always
 
 networks:

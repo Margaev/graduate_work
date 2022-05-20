@@ -12,6 +12,8 @@ from dash import dcc, html
 from data_models.models import PacketModel
 from helpers.mongo import MongoManager
 
+MONGO_HOST = os.environ.get("MONGO_HOST", "mongo")
+MONGO_PORT = os.environ.get("MONGO_PORT", "27017")
 DATABASE = os.environ.get("DATABASE", "network_scanner")
 COLLECTION = os.environ.get("DATABASE", "packets")
 USERNAME = os.environ.get("USERNAME", "admin")
@@ -64,6 +66,8 @@ app.layout = html.Div(
               Input("interval-component", "n_intervals"))
 def update_graph_live(n):
     mongo_manager = MongoManager(
+        host=MONGO_HOST,
+        port=MONGO_PORT,
         database=DATABASE,
         collection=COLLECTION,
         username=USERNAME,
@@ -137,4 +141,4 @@ def update_graph_live(n):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(host="0.0.0.0", port=8050, debug=True)

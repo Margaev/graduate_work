@@ -21,9 +21,10 @@ PROTOCOL_TOPIC_MAPPING = {
     "HTTP Request": HTTP_PACKETS_KAFKA_TOPIC,
 }
 
+MONGO_HOST = os.environ.get("MONGO_HOST", "127.0.0.1")
+MONGO_PORT = os.environ.get("MONGO_PORT", "27017")
 DATABASE = os.environ.get("DATABASE", "network_scanner")
 RAW_PACKETS_COLLECTION = os.environ.get("DATABASE", "raw_packets")
-# IP_PACKETS_COLLECTION = os.environ.get("DATABASE", "ip_packets")
 USERNAME = os.environ.get("USERNAME", "admin")
 PASSWORD = os.environ.get("PASSWORD", "admin")
 
@@ -33,6 +34,8 @@ kafka_manager = KafkaManager(
 )
 
 mongo_manager = MongoManager(
+    host=MONGO_HOST,
+    port=MONGO_PORT,
     database=DATABASE,
     collection=RAW_PACKETS_COLLECTION,
     username=USERNAME,
