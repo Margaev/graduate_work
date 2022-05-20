@@ -3,16 +3,12 @@ from typing import Optional
 from datetime import datetime
 from functools import lru_cache
 
-import pymongo
-
 from pymongo import MongoClient
-
-from data_models.models import PacketModel
 
 logging.basicConfig(level="INFO")
 
 
-class MongoPacketFacade:
+class MongoManager:
     def __init__(self, database: str, collection: str, username: str, password: str):
         self._client = MongoClient(
             host="127.0.0.1",
@@ -23,8 +19,8 @@ class MongoPacketFacade:
         self._database = self._client.get_database(database)
         self._collection = self._database.get_collection(collection)
 
-    def insert(self, data: PacketModel):
-        inserted = self._collection.insert_one(data.dict())
+    def insert(self, data: dict):
+        inserted = self._collection.insert_one(data)
         logging.info(
             "Inserted item db=%s, collection=%s, value=%s",
             self._database,

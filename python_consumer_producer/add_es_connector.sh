@@ -1,1 +1,0 @@
-curl -XPOST http://kafka-connect-sink:8084/connectors -d @es_connect.json -H "Content-Type: application/json"

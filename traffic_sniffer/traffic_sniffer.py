@@ -1,88 +1,66 @@
-import hashlib
 import logging
 import os
 
 from scapy.all import sniff
+from scapy.layers.http import HTTPRequest
 from scapy.packet import Packet
-from kafka import KafkaProducer
 
-from helpers.packet_parser import NetworkingProtocolParser, TransportProtocolParser, ApplicationProtocolParser
-from data_models.models import PacketModel
+from helpers.kafka import KafkaManager
 
 logging.basicConfig(level="WARNING")
 
 INTERFACE_TO_SNIFF = os.environ.get("INTERFACE", "en0")
 KAFKA_TOPIC = f"{INTERFACE_TO_SNIFF}_topic"
-PARTITIONS_NUMBER = os.environ.get("PARTITIONS_NUMBER", 10)
+PARTITION_NUMBER = os.environ.get("PARTITION_NUMBER", 10)
+BOOTSTRAP_SERVERS = os.environ.get("BOOTSTRAP_SERVERS", "127.0.0.1:19092,127.0.0.1:29092,127.0.0.1:39092").split(",")
 
-bootstrap_servers = ['127.0.0.1:19092', '127.0.0.1:29092', '127.0.0.1:39092']
-
-
-def parse_packet(raw_packet: Packet) -> PacketModel:
-    flags = raw_packet.sprintf("%TCP.flags%")
-    packet_data = {
-        "interface": INTERFACE_TO_SNIFF,
-        "flags": flags,
-    }
-    try:
-        for ProtocolParser in [NetworkingProtocolParser, TransportProtocolParser, ApplicationProtocolParser]:
-            packet_data.update(ProtocolParser().parse(raw_packet))
-    except IndexError as error:
-        logging.warning(
-            "Error getting packet field:\n%s\npacket data:\n%s",
-            error,
-            raw_packet.show(),
-        )
-    return PacketModel(**packet_data)
+kafka_manager = KafkaManager(
+    bootstrap_servers=BOOTSTRAP_SERVERS,
+    partition_number=PARTITION_NUMBER,
+)
 
 
-def get_partition_by_ips(src_ip: str, dst_ip: str) -> int:
-    hex_hash = hashlib.md5(f"{sorted((src_ip, dst_ip))}".encode("UTF-8")).hexdigest()
-    return int(hex_hash, 16) % PARTITIONS_NUMBER
-
-
-def on_send_success(record_metadata):
-    logging.info(
-        "The message was pushed successfully to kafka:\ntopic: %s\npartition: %s\noffset: %s",
-        record_metadata.topic,
-        record_metadata.partition,
-        record_metadata.offset,
-    )
-
-
-def on_error_callback(exception):
-    logging.error("An error occurred while pushing the message to kafka:", exc_info=exception)
-
-
-def send_packet_to_kafka(packet: PacketModel):
-    producer = KafkaProducer(
-        api_version=(2, 5, 0),
-        bootstrap_servers=bootstrap_servers,
-        retries=5,
-    )
-
-    message = bytes(packet.json(), encoding='utf-8')
-    partition = get_partition_by_ips(src_ip=packet.src_ip, dst_ip=packet.dst_ip)
-
-    producer.send(
-        topic=KAFKA_TOPIC,
-        value=message,
-        partition=partition,
-    ).add_callback(on_send_success).add_errback(on_error_callback)
-
-    producer.flush()
-    producer.close(2)
+def parse_packet(raw_packet: Packet):
+    packet_dict = {}
+    layer = None
+    sublayer = None
+    for line in raw_packet.show2(dump=True).split('\n'):
+        if '###' in line:
+            if '|###' in line and layer is not None:
+                sublayer = line.strip('|#[] ')
+                packet_dict[layer][sublayer] = {}
+            else:
+                layer = line.strip('#[] ')
+                packet_dict[layer] = {}
+        elif '=' in line:
+            if '|' in line and sublayer is not None:
+                key, val = line.strip('| ').split('=', 1)
+                packet_dict[layer][sublayer][key.strip()] = val.strip('\' ')
+            else:
+                key, val = line.split('=', 1)
+                val = val.strip('\' ')
+                packet_dict[layer][key.strip()] = val
+    return packet_dict
 
 
 def callback(raw_packet: Packet):
     packet = parse_packet(raw_packet)
+    if raw_packet.haslayer(HTTPRequest):
+        logging.warning(raw_packet.show2(dump=True))
     logging.info(packet)
-    send_packet_to_kafka(packet)
+    kafka_manager.send_packet_to_kafka(
+        packet=packet,
+        topic=KAFKA_TOPIC,
+    )
+
+
+def main():
+    sniff(
+        iface=INTERFACE_TO_SNIFF,
+        prn=callback,
+        store=False,
+    )
 
 
 if __name__ == '__main__':
-    sniff(
-        iface=INTERFACE_TO_SNIFF,
-        store=False,
-        prn=callback,
-    )
+    main()

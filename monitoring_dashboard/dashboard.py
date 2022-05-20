@@ -10,7 +10,7 @@ from dash.dependencies import Input, Output
 from dash import dcc, html
 
 from data_models.models import PacketModel
-from helpers.mongo import MongoPacketFacade
+from helpers.mongo import MongoManager
 
 DATABASE = os.environ.get("DATABASE", "network_scanner")
 COLLECTION = os.environ.get("DATABASE", "packets")
@@ -63,7 +63,7 @@ app.layout = html.Div(
 @app.callback(Output("ip-packets-per-minute", "figure"),
               Input("interval-component", "n_intervals"))
 def update_graph_live(n):
-    mongo_facade = MongoPacketFacade(
+    mongo_manager = MongoManager(
         database=DATABASE,
         collection=COLLECTION,
         username=USERNAME,
@@ -83,7 +83,7 @@ def update_graph_live(n):
 
     for i in range(time_frame):
         desired_datetime = start_time + datetime.timedelta(minutes=i)
-        num_of_packets = mongo_facade.find_num_of_ip_packets_per_minute(
+        num_of_packets = mongo_manager.find_num_of_ip_packets_per_minute(
             dtm=desired_datetime
         )
         data["x_labels"][i] = desired_datetime.strftime("%m/%d %H:%M")
