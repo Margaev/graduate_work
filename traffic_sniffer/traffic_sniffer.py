@@ -3,6 +3,7 @@ import os
 
 from scapy.all import sniff
 from scapy.layers.http import HTTPRequest
+from scapy.layers.inet import UDP
 from scapy.packet import Packet
 
 from helpers.kafka import KafkaManager
@@ -21,7 +22,10 @@ kafka_manager = KafkaManager(
 
 
 def parse_packet(raw_packet: Packet):
-    packet_dict = {}
+    packet_dict = {
+        "interface": INTERFACE_TO_SNIFF,
+        "timestamp": int(raw_packet.time),
+    }
     layer = None
     sublayer = None
     for line in raw_packet.show2(dump=True).split('\n'):
@@ -45,8 +49,6 @@ def parse_packet(raw_packet: Packet):
 
 def callback(raw_packet: Packet):
     packet = parse_packet(raw_packet)
-    if raw_packet.haslayer(HTTPRequest):
-        logging.warning(raw_packet.show2(dump=True))
     logging.info(packet)
     kafka_manager.send_packet_to_kafka(
         packet=packet,

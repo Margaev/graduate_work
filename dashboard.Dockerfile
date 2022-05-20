@@ -1,7 +1,6 @@
 FROM python:3.9.12-buster
-WORKDIR /opt/consumer_producer
+WORKDIR /opt/monitoring_dashboard
 COPY ./monitoring_dashboard .
-COPY ./data_models ./data_models
 COPY ./helpers ./helpers
 RUN pip install -r ./requirements.txt
 EXPOSE 8050

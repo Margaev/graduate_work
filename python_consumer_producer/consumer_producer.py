@@ -22,7 +22,7 @@ PROTOCOL_TOPIC_MAPPING = {
 }
 
 MONGO_HOST = os.environ.get("MONGO_HOST", "127.0.0.1")
-MONGO_PORT = os.environ.get("MONGO_PORT", "27017")
+MONGO_PORT = int(os.environ.get("MONGO_PORT", "27017"))
 DATABASE = os.environ.get("DATABASE", "network_scanner")
 RAW_PACKETS_COLLECTION = os.environ.get("DATABASE", "raw_packets")
 USERNAME = os.environ.get("USERNAME", "admin")

@@ -3,6 +3,8 @@ from typing import Optional
 from datetime import datetime
 from functools import lru_cache
 
+import pymongo
+
 from pymongo import MongoClient
 
 logging.basicConfig(level="INFO")
@@ -28,23 +30,28 @@ class MongoManager:
             inserted
         )
 
+    def upsert(self, find_filter: dict, update: dict):
+        inserted = self._collection.update_one(find_filter, update, upsert=True)
+        logging.info(
+            "Inserted item db=%s, collection=%s, value=%s",
+            self._database,
+            self._collection,
+            inserted
+        )
+
     def find(self, find_filter: Optional[dict], *args, **kwargs):
-        self._collection.find(find_filter, *args, **kwargs)
+        return self._collection.find(find_filter, *args, **kwargs)
 
-    # @lru_cache
-    def _find_packets_within_time_range(self, date_from_timestamp: int, date_to_timestamp: int):
-        find_filter = {
-            "timestamp": {
-                "$gte": date_from_timestamp,
-                "$lte": date_to_timestamp,
-            },
-            "networking_protocol": "IP",
-        }
-        return self._collection.count_documents(filter=find_filter)
+    def find_ip_packets_count_per_minute(self, start_time: int, end_time: int, ascending: bool = True):
+        return self.find(
+            {"timestamp": {"$gte": start_time, "$lte": end_time}}
+        ).sort("timestamp", pymongo.ASCENDING if ascending else pymongo.DESCENDING)
 
-    def find_num_of_ip_packets_per_minute(self, dtm: datetime):
-        date_from = dtm.replace(second=0)
-        date_to = dtm.replace(second=59)
-        date_from_timestamp = int(date_from.timestamp())
-        date_to_timestamp = int(date_to.timestamp())
-        return self._find_packets_within_time_range(date_from_timestamp, date_to_timestamp)
+    def get_median_ip_packets_count_per_minute(self, start_time: int, end_time: int):
+        return self.find(
+            {"timestamp": {"$gte": start_time, "$lte": end_time}}
+        ).sort(
+            "packets_count", pymongo.ASCENDING
+        ).skip(
+            self._collection.count_documents({}) // 2
+        ).limit(1)[0]["packets_count"]

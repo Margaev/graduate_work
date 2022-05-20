@@ -1,3 +1,4 @@
+import logging
 import os
 import datetime
 
@@ -9,15 +10,16 @@ import plotly.express
 from dash.dependencies import Input, Output
 from dash import dcc, html
 
-from data_models.models import PacketModel
 from helpers.mongo import MongoManager
 
-MONGO_HOST = os.environ.get("MONGO_HOST", "mongo")
-MONGO_PORT = os.environ.get("MONGO_PORT", "27017")
+MONGO_HOST = os.environ.get("MONGO_HOST", "localhost")
+MONGO_PORT = int(os.environ.get("MONGO_PORT", "27017"))
 DATABASE = os.environ.get("DATABASE", "network_scanner")
-COLLECTION = os.environ.get("DATABASE", "packets")
+IP_PACKETS_COLLECTION = os.environ.get("DATABASE", "ip_packets")
 USERNAME = os.environ.get("USERNAME", "admin")
 PASSWORD = os.environ.get("PASSWORD", "admin")
+
+ONE_MINUTE_IN_SECONDS = 60
 
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 colors = {
@@ -55,7 +57,7 @@ app.layout = html.Div(
         IP_PACKETS_PER_MINUTE,
         dcc.Interval(
             id="interval-component",
-            interval=5 * 1000,  # in milliseconds
+            interval=2 * 1000,  # in milliseconds
             n_intervals=0
         )
     ]
@@ -69,42 +71,33 @@ def update_graph_live(n):
         host=MONGO_HOST,
         port=MONGO_PORT,
         database=DATABASE,
-        collection=COLLECTION,
+        collection=IP_PACKETS_COLLECTION,
         username=USERNAME,
         password=PASSWORD,
     )
 
     time_frame = 60
 
+    end_time = int(datetime.datetime.now().replace(second=0).timestamp())
+    start_time = int(end_time - datetime.timedelta(minutes=time_frame).total_seconds())
+    timestamp_range = list(
+        range(start_time + ONE_MINUTE_IN_SECONDS, end_time + ONE_MINUTE_IN_SECONDS, ONE_MINUTE_IN_SECONDS)
+    )
+    datetime_range = map(
+        lambda timestamp: datetime.datetime.fromtimestamp(timestamp).strftime("%m/%d %H:%M"),
+        timestamp_range,
+    )
+
     data = {
-        "minutes": np.arange(time_frame, dtype=int),
-        "x_labels": np.empty(time_frame, dtype="U11"),
-        "packets": np.zeros(time_frame, dtype=int),
-        "mean": np.array([None, ] * time_frame, dtype=float),
+        "minutes": list(range(1, time_frame + 1)),
+        "x_labels": list(datetime_range),
     }
 
-    start_time = datetime.datetime.now() - datetime.timedelta(minutes=time_frame - 1)
+    ip_packets_count_list = mongo_manager.find_ip_packets_count_per_minute(start_time, end_time)
+    ip_packets_count = {doc["timestamp"]: doc["packets_count"] for doc in ip_packets_count_list}
+    data["packets"] = [ip_packets_count.get(timestamp, 0) for timestamp in timestamp_range]
 
-    for i in range(time_frame):
-        desired_datetime = start_time + datetime.timedelta(minutes=i)
-        num_of_packets = mongo_manager.find_num_of_ip_packets_per_minute(
-            dtm=desired_datetime
-        )
-        data["x_labels"][i] = desired_datetime.strftime("%m/%d %H:%M")
-        data["packets"][i] = num_of_packets
-
-    # Mean IP packets per minute
-    starting_index = (data["packets"] != 0).argmax(axis=0)
-
-    data["mean"][starting_index:] = np.mean(
-        data["packets"][
-            # drop 0 values
-            (data["packets"] != np.array(0))
-            # truncating everything below 20th and above 80th percentile
-            & (data["packets"] > np.percentile(data["packets"], 5))
-            & (data["packets"] < np.percentile(data["packets"], 95))
-        ]
-    )
+    data["median"] = (mongo_manager.get_median_ip_packets_count_per_minute(start_time, end_time), ) * time_frame
 
     # subplots
     fig = plotly.subplots.make_subplots(rows=1, cols=1, vertical_spacing=0.2)
@@ -118,7 +111,7 @@ def update_graph_live(n):
 
     fig.add_trace({
         "x": data["minutes"],
-        "y": data["mean"],
+        "y": data["median"],
         "name": "Normal Packets Trend",
         "text": data["x_labels"],
         "type": "scatter",
