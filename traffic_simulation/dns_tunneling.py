@@ -29,7 +29,7 @@ def send_packets():
     )
     p_2 = ip / udp / dns_2
 
-    send([p_1, p_2], iface="en0", loop=1, verbose=0, inter=1)
+    send([p_1, p_2], iface="en0", loop=1, verbose=0, inter=3)
 
 
 if __name__ == "__main__":

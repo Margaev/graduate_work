@@ -14,7 +14,7 @@ def send_packets():
     raw = Raw(b"X"*1024)
     p = ip / tcp / http / raw
 
-    send(p, iface="en0", loop=1, verbose=0, inter=1)
+    send(p, iface="en0", loop=1, verbose=0, inter=3)
 
 
 if __name__ == "__main__":
