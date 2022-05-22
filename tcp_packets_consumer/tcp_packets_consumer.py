@@ -1,11 +1,10 @@
 import os
 import logging
-from collections import defaultdict
 
 from helpers.kafka import KafkaManager
 from helpers.mongo import MongoManager
 
-logging.basicConfig(level="INFO")
+logging.basicConfig(level="WARNING")
 
 TCP_PACKETS_KAFKA_TOPIC = os.environ.get("TCP_PACKETS_KAFKA_TOPIC", "tcp_topic")
 PARTITION_NUMBER = os.environ.get("PARTITION_NUMBER", 10)

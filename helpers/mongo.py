@@ -42,7 +42,7 @@ class MongoManager:
     def find(self, find_filter: Optional[dict], *args, **kwargs):
         return self._collection.find(find_filter, *args, **kwargs)
 
-    def find_ip_packets_count_per_minute(self, start_time: int, end_time: int, ascending: bool = True):
+    def find_packets_count_per_minute(self, start_time: int, end_time: int, ascending: bool = True):
         return self.find(
             {"timestamp": {"$gte": start_time, "$lte": end_time}}
         ).sort("timestamp", pymongo.ASCENDING if ascending else pymongo.DESCENDING)

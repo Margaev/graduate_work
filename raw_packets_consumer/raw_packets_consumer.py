@@ -4,7 +4,7 @@ import logging
 from helpers.kafka import KafkaManager
 from helpers.mongo import MongoManager
 
-logging.basicConfig(level="INFO")
+logging.basicConfig(level="WARNING")
 
 RAW_PACKETS_KAFKA_TOPIC = os.environ.get("RAW_PACKETS_KAFKA_TOPIC", "en0_topic")
 IP_PACKETS_KAFKA_TOPIC = os.environ.get("IP_PACKETS_KAFKA_TOPIC", "ip_topic")

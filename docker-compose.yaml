@@ -153,6 +153,21 @@ services:
         condition: service_healthy
     restart: always
 
+  dns_packets_consumer:
+    build:
+      context: .
+      dockerfile: dns_packets_consumer.Dockerfile
+    container_name: dns_packets_consumer
+    network_mode: host
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    restart: always
+
   dashboard:
     build:
       context: .
