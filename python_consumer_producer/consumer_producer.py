@@ -62,5 +62,5 @@ def main():
         mongo_manager.insert(packet)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

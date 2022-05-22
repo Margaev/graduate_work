@@ -55,3 +55,8 @@ class MongoManager:
         ).skip(
             self._collection.count_documents({}) // 2
         ).limit(1)[0]["packets_count"]
+
+    def find_tcp_ack_syn_count_per_minute(self, start_time: int, end_time: int, ascending: bool = True):
+        return self.find(
+            {"timestamp": {"$gte": start_time, "$lte": end_time}}
+        ).sort("timestamp", pymongo.ASCENDING if ascending else pymongo.DESCENDING)

@@ -46,7 +46,7 @@ class KafkaManager:
         producer = KafkaProducer(
             api_version=(2, 5, 0),
             bootstrap_servers=self.bootstrap_servers,
-            value_serializer=lambda msg: json.dumps(msg).encode('ascii'),
+            value_serializer=lambda msg: json.dumps(msg).encode("ascii"),
             retries=5,
         )
 

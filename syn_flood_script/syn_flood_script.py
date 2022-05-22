@@ -9,8 +9,8 @@ def send_packets():
     raw = Raw(b"X"*1024)
     p = ip / tcp / raw
 
-    send(p, iface="en0", loop=1, verbose=0, inter=0.01)
+    send(p, iface="en0", loop=1, verbose=0, inter=0.1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     send_packets()

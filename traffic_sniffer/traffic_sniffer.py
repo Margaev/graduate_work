@@ -2,8 +2,6 @@ import logging
 import os
 
 from scapy.all import sniff
-from scapy.layers.http import HTTPRequest
-from scapy.layers.inet import UDP
 from scapy.packet import Packet
 
 from helpers.kafka import KafkaManager
@@ -24,25 +22,25 @@ kafka_manager = KafkaManager(
 def parse_packet(raw_packet: Packet):
     packet_dict = {
         "interface": INTERFACE_TO_SNIFF,
-        "timestamp": int(raw_packet.time),
+        "timestamp": raw_packet.time,
     }
     layer = None
     sublayer = None
-    for line in raw_packet.show2(dump=True).split('\n'):
-        if '###' in line:
-            if '|###' in line and layer is not None:
-                sublayer = line.strip('|#[] ')
+    for line in raw_packet.show2(dump=True).split("\n"):
+        if "###" in line:
+            if "|###" in line and layer is not None:
+                sublayer = line.strip("|#[] ")
                 packet_dict[layer][sublayer] = {}
             else:
-                layer = line.strip('#[] ')
+                layer = line.strip("#[] ")
                 packet_dict[layer] = {}
-        elif '=' in line:
-            if '|' in line and sublayer is not None:
-                key, val = line.strip('| ').split('=', 1)
-                packet_dict[layer][sublayer][key.strip()] = val.strip('\' ')
+        elif "=" in line:
+            if "|" in line and sublayer is not None:
+                key, val = line.strip("| ").split("=", 1)
+                packet_dict[layer][sublayer][key.strip()] = val.strip("\" ")
             else:
-                key, val = line.split('=', 1)
-                val = val.strip('\' ')
+                key, val = line.split("=", 1)
+                val = val.strip("\" ")
                 packet_dict[layer][key.strip()] = val
     return packet_dict
 
@@ -64,5 +62,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

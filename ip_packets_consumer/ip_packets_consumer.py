@@ -1,6 +1,5 @@
 import os
 import logging
-import datetime
 
 from helpers.kafka import KafkaManager
 from helpers.mongo import MongoManager
@@ -14,7 +13,7 @@ BOOTSTRAP_SERVERS = os.environ.get("BOOTSTRAP_SERVERS", "127.0.0.1:19092,127.0.0
 MONGO_HOST = os.environ.get("MONGO_HOST", "127.0.0.1")
 MONGO_PORT = int(os.environ.get("MONGO_PORT", "27017"))
 DATABASE = os.environ.get("DATABASE", "network_scanner")
-IP_PACKETS_COLLECTION = os.environ.get("DATABASE", "ip_packets")
+IP_PACKETS_COLLECTION = os.environ.get("IP_PACKETS_COLLECTION", "ip_packets")
 USERNAME = os.environ.get("USERNAME", "admin")
 PASSWORD = os.environ.get("PASSWORD", "admin")
 
@@ -39,10 +38,10 @@ def main():
         packet = packet_message.value
         # increment packets count for packet arrival minute
         mongo_manager.upsert(
-            {'timestamp': packet["timestamp"] - packet["timestamp"] % 60},
-            {'$inc': {'packets_count': 1}},
+            {"timestamp": packet["timestamp"] - packet["timestamp"] % 60},
+            {"$inc": {"packets_count": 1}},
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
