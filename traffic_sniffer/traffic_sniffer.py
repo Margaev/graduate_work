@@ -2,6 +2,7 @@ import logging
 import os
 
 from scapy.all import sniff
+from scapy.layers.http import HTTPRequest
 from scapy.packet import Packet
 
 from helpers.kafka import KafkaManager
@@ -48,6 +49,13 @@ def parse_packet(raw_packet: Packet):
 def callback(raw_packet: Packet):
     packet = parse_packet(raw_packet)
     logging.info(packet)
+    if "IP" in packet:
+        if packet["IP"]["src"] == "34.195.104.96" or packet["IP"]["dst"] == "34.195.104.96":
+            logging.warning(packet)
+    if HTTPRequest in raw_packet:
+        logging.warning(raw_packet.show2())
+    #     logging.warning(packet)
+
     kafka_manager.send_packet_to_kafka(
         packet=packet,
         topic=KAFKA_TOPIC,

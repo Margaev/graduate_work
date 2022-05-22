@@ -168,6 +168,21 @@ services:
         condition: service_healthy
     restart: always
 
+  http_packets_consumer:
+    build:
+      context: .
+      dockerfile: http_packets_consumer.Dockerfile
+    container_name: http_packets_consumer
+    network_mode: host
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    restart: always
+
   dashboard:
     build:
       context: .
