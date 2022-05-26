@@ -1,4 +1,5 @@
 # Internet Traffic Monitoring System
+## Proposed architecture diagram
 <img width="1026" alt="image" src="https://user-images.githubusercontent.com/49162274/170590210-85342567-73f1-4fa8-be0d-67a1ef659ffb.png">
 
 ## Prerequisites:
