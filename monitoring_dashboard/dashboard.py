@@ -145,7 +145,7 @@ app.layout = html.Div(
 @app.callback(Output("ip-packets-per-minute", "figure"),
               Input("interval-component", "n_intervals"))
 def update_ip_graph_live(n):
-    time_frame = 60
+    time_frame = 30
 
     end_time = int(datetime.datetime.now().replace(second=0).timestamp())
     start_time = int(end_time - datetime.timedelta(minutes=time_frame).total_seconds())
@@ -206,7 +206,7 @@ def update_ip_graph_live(n):
 @app.callback(Output("syn-ack-rate-per-minute", "figure"),
               Input("interval-component", "n_intervals"))
 def update_tcp_graph_live(n):
-    time_frame = 60
+    time_frame = 30
 
     end_time = int(datetime.datetime.now().replace(second=0).timestamp())
     start_time = int(end_time - datetime.timedelta(minutes=time_frame).total_seconds())
@@ -281,7 +281,7 @@ def update_tcp_graph_live(n):
 @app.callback(Output("dns-packets-per-minute", "figure"),
               Input("interval-component", "n_intervals"))
 def update_dns_graph_live(n):
-    time_frame = 60
+    time_frame = 30
 
     end_time = int(datetime.datetime.now().replace(second=0).timestamp())
     start_time = int(end_time - datetime.timedelta(minutes=time_frame).total_seconds())
@@ -357,7 +357,7 @@ def update_dns_graph_live(n):
 @app.callback(Output("http-packets-per-minute", "figure"),
               Input("interval-component", "n_intervals"))
 def update_http_graph_live(n):
-    time_frame = 60
+    time_frame = 30
 
     end_time = int(datetime.datetime.now().replace(second=0).timestamp())
     start_time = int(end_time - datetime.timedelta(minutes=time_frame).total_seconds())
