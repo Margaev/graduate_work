@@ -2,7 +2,6 @@ import logging
 import os
 
 from scapy.all import sniff
-from scapy.layers.http import HTTPRequest
 from scapy.packet import Packet
 
 from helpers.kafka import KafkaManager
