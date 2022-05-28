@@ -1,0 +1,6 @@
+scapy
+kafka-python
+pymongo
+dash
+pandas
+pytest
